@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 class ScanSheetScreen extends StatefulWidget {
   final String subjectId;
-  final String subjectName; // Passing the name just to show it in the AppBar
+  final String subjectName;
 
   const ScanSheetScreen({
     super.key,
@@ -22,15 +22,13 @@ class ScanSheetScreen extends StatefulWidget {
 class _ScanSheetScreenState extends State<ScanSheetScreen> {
   File? _image;
   final ImagePicker _picker = ImagePicker();
-  bool _isExtracting =
-      false; // We'll use this in Step 6 to show a loading spinner
+  bool _isExtracting = false;
 
-  // Function to open the camera
   Future<void> _takePhoto() async {
     final XFile? photo = await _picker.pickImage(
       source: ImageSource.camera,
       preferredCameraDevice: CameraDevice.rear,
-      imageQuality: 100, // We want high quality for Gemini to read text clearly
+      imageQuality: 100,
     );
 
     if (photo != null) {
@@ -48,18 +46,15 @@ class _ScanSheetScreenState extends State<ScanSheetScreen> {
     });
 
     try {
-      // 1. Initialize Gemini Model (Replace with your actual API key)
-      const apiKey = 'AIzaSyBRo3gYrZxPXoaj-PDPoC81BSR8BMiunFM';
+      const apiKey = 'AIzaSyDiW181U3W8C4qF-ev-f_JdJykr6EftZtA';
       final model = GenerativeModel(
         model: 'gemini-2.5-flash',
         apiKey: apiKey,
-        // Forcing JSON output guarantees the response matches our database columns
         generationConfig: GenerationConfig(
           responseMimeType: 'application/json',
         ),
       );
 
-      // 2. Prepare the prompt and the image
       final prompt = TextPart('''
         You are an expert data entry assistant. Analyze this scanned student answer sheet.
         Extract the Student Name, Roll Number, Marks for Q1 to Q15, and Total Marks.
@@ -78,7 +73,6 @@ class _ScanSheetScreenState extends State<ScanSheetScreen> {
       final imageBytes = await _image!.readAsBytes();
       final imagePart = DataPart('image/jpeg', imageBytes);
 
-      // 3. Send to Gemini
       final response = await model.generateContent([
         Content.multi([prompt, imagePart]),
       ]);
@@ -86,28 +80,23 @@ class _ScanSheetScreenState extends State<ScanSheetScreen> {
       final jsonString = response.text;
 
       if (jsonString != null) {
-        // 4. Parse the JSON response
         final Map<String, dynamic> extractedData = jsonDecode(jsonString);
-
-        // Add the current subject folder ID so it saves in the right place
         extractedData['subject_id'] = widget.subjectId;
 
-        // 5. Save to Supabase
         await Supabase.instance.client
             .from('student_marks')
             .insert(extractedData);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
+            SnackBar(
+              content: const Text(
                 'Marks extracted and saved successfully!',
                 style: TextStyle(color: Colors.white),
               ),
-              backgroundColor: Colors.black,
+              backgroundColor: Colors.green.shade800,
             ),
           );
-          // Go back to the previous screen after saving
           Navigator.pop(context);
         }
       }
@@ -135,15 +124,15 @@ class _ScanSheetScreenState extends State<ScanSheetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.black,
         surfaceTintColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           widget.subjectName,
           style: const TextStyle(
-            color: Colors.black,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -156,7 +145,6 @@ class _ScanSheetScreenState extends State<ScanSheetScreen> {
     );
   }
 
-  // UI when no image is taken yet
   Widget _buildNoImageState() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -164,13 +152,13 @@ class _ScanSheetScreenState extends State<ScanSheetScreen> {
         const Icon(
           Icons.document_scanner_outlined,
           size: 80,
-          color: Colors.black54,
+          color: Colors.blueAccent, // Blue icon
         ),
         const SizedBox(height: 24),
         const Text(
           'Scan a student answer sheet\nto extract marks automatically.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.black87, fontSize: 16),
+          style: TextStyle(color: Colors.white70, fontSize: 16),
         ),
         const SizedBox(height: 32),
         ElevatedButton.icon(
@@ -181,7 +169,7 @@ class _ScanSheetScreenState extends State<ScanSheetScreen> {
             style: TextStyle(color: Colors.white, fontSize: 16),
           ),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black,
+            backgroundColor: Colors.blueAccent, // Blue button
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(30),
@@ -192,7 +180,6 @@ class _ScanSheetScreenState extends State<ScanSheetScreen> {
     );
   }
 
-  // UI after taking a photo
   Widget _buildImagePreviewState() {
     return Column(
       children: [
@@ -200,8 +187,11 @@ class _ScanSheetScreenState extends State<ScanSheetScreen> {
           child: Container(
             margin: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300, width: 2),
+              border: Border.all(color: Colors.grey.shade800, width: 2),
               borderRadius: BorderRadius.circular(16),
+              color: Colors
+                  .grey
+                  .shade900, // Slightly lighter black for image container
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
@@ -216,29 +206,34 @@ class _ScanSheetScreenState extends State<ScanSheetScreen> {
               if (_isExtracting)
                 const Column(
                   children: [
-                    CircularProgressIndicator(color: Colors.black),
+                    CircularProgressIndicator(color: Colors.blueAccent),
                     SizedBox(height: 16),
                     Text(
                       'Gemini is analyzing the sheet...',
-                      style: TextStyle(fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
                     ),
                   ],
                 )
               else
                 Row(
                   children: [
-                    // Retake Button
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _takePhoto,
-                        icon: const Icon(Icons.refresh, color: Colors.black),
+                        icon: const Icon(
+                          Icons.refresh,
+                          color: Colors.blueAccent,
+                        ),
                         label: const Text(
                           'Retake',
-                          style: TextStyle(color: Colors.black),
+                          style: TextStyle(color: Colors.blueAccent),
                         ),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: const BorderSide(color: Colors.black),
+                          side: const BorderSide(color: Colors.blueAccent),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -246,7 +241,6 @@ class _ScanSheetScreenState extends State<ScanSheetScreen> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    // Extract Button
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: _extractData,
@@ -259,7 +253,7 @@ class _ScanSheetScreenState extends State<ScanSheetScreen> {
                           style: TextStyle(color: Colors.white),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
+                          backgroundColor: Colors.blueAccent,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
