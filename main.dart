@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:paper_scan/screens/subjects_screen.dart';
+import 'package:paper_scan/screens/subjects_screen.dart'; // Adjust path if needed
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
@@ -19,7 +19,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: SubjectsScreen()
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: Colors.black,
+        primaryColor: Colors.blueAccent,
+        colorScheme: const ColorScheme.dark(
+          primary: Colors.blueAccent,
+          secondary: Colors.blue,
+          surface: Colors.black,
+        ),
+      ),
+      home: const SubjectsScreen(),
     );
   }
 }
